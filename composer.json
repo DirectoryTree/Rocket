@@ -1,0 +1,54 @@
+{
+    "name": "directorytree/rocket",
+    "description": "A Laravel application deployment tool utilizing git.",
+    "keywords": [
+        "directorytree",
+        "rocket"
+    ],
+    "homepage": "https://github.com/directorytree/rocket",
+    "license": "MIT",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Steve Bauman",
+            "email": "steven_bauman@outlook.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": ">=7.2",
+        "illuminate/support": "^5.6|^6.0|^7.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^4.0",
+        "phpunit/phpunit": "^8.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "DirectoryTree\\Rocket\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "DirectoryTree\\Rocket\\Tests\\": "tests"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit",
+        "test-coverage": "vendor/bin/phpunit --coverage-html coverage"
+
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "DirectoryTree\\Rocket\\RocketServiceProvider"
+            ],
+            "aliases": {
+                "Rocket": "Rocket"
+            }
+        }
+    }
+}
