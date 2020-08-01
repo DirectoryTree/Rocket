@@ -1,0 +1,26 @@
+<?php
+
+use DirectoryTree\Rocket\Deployments\Deployment;
+
+class {{ class }} extends Deployment
+{
+    /**
+     * Operations to execute before the deployment.
+     *
+     * @return void
+     */
+    public function before()
+    {
+        //
+    }
+
+    /**
+     * Operations to execute after the deployment.
+     *
+     * @return void
+     */
+    public function after()
+    {
+        //
+    }
+}
