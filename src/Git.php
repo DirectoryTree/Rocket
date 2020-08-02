@@ -187,6 +187,18 @@ class Git
     }
 
     /**
+     * Fetch the repository's tags.
+     *
+     * @return bool
+     */
+    public function fetch()
+    {
+        exec('git fetch 2>&1', $output, $status);
+
+        return $status === 0;
+    }
+
+    /**
      * Reset the repository to the HEAD, or to the given tag.
      *
      * @param string|null $tag
@@ -233,7 +245,7 @@ class Git
      */
     public function getCurrentTag()
     {
-        exec('git describe --tags --exact-match 2>&1', $output, $status);
+        exec('git describe --tags 2>&1', $output, $status);
 
         return $status === 0 ? reset($output) : false;
     }
