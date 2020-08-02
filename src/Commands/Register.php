@@ -2,9 +2,10 @@
 
 namespace DirectoryTree\Rocket\Commands;
 
-use Illuminate\Console\Command;
-use DirectoryTree\Rocket\Windows\DeploymentTask;
 use Illuminate\Support\Str;
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\File;
+use DirectoryTree\Rocket\Windows\DeploymentTask;
 
 class Register extends Command
 {
@@ -35,11 +36,17 @@ class Register extends Command
             'description' => 'Automates application deployment.',
         ]);
 
-        if (! $task->exists()) {
-            $task->create();
+        if (! File::isDirectory($path = base_path('deployments'))) {
+            File::makeDirectory($path);
         }
 
-        $command = sprintf('schtasks /Create /TN "%s" /XML "%s" /F', $this->name, $task->path());
+        $taskPath = implode(DIRECTORY_SEPARATOR, [
+            $path, Str::snake($task->name).'.xml',
+        ]);
+
+        File::put($taskPath, $task->toXml());
+
+        $command = sprintf('schtasks /Create /TN "%s" /XML "%s" /F', $task->name, $taskPath);
 
         exec($command, $output, $status);
 

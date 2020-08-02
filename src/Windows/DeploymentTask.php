@@ -2,7 +2,7 @@
 
 namespace DirectoryTree\Rocket\Windows;
 
-class DeploymentTask extends StoredScheduledTask
+class DeploymentTask extends ScheduledTask
 {
     /**
      * The task attributes.
