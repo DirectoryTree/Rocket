@@ -33,7 +33,7 @@ class Register extends Command
         exec('whoami', $output, $status);
 
         if ($status !== 0) {
-            return $this->info('Unable to retrieve current user for task registration.');
+            return $this->error('Unable to retrieve current user for task registration.');
         }
 
         $task = new DeploymentTask([
@@ -57,6 +57,10 @@ class Register extends Command
 
         exec($command, $output, $status);
 
-        return $status;
+        File::delete($taskPath);
+
+        return $status === 0
+            ? $this->info('Successfully registered scheduled task.')
+            : $this->error('Unable to register scheduled task.');
     }
 }
