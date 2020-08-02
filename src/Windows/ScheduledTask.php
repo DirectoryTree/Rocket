@@ -15,6 +15,10 @@ abstract class ScheduledTask extends Fluent
      */
     const USER_SYSTEM = 'S-1-5-18';
 
+    const LOGON_TYPE_S4U = 'S4U';
+    const LOGON_TYPE_PASSWORD = 'Password';
+    const LOGON_TYPE_INTERACTIVE_TOKEN = 'InteractiveToken';
+
     /**
      * The format to use for the scheduled task dates.
      *
@@ -111,6 +115,7 @@ abstract class ScheduledTask extends Fluent
                     ],
                     'UserId' => $this->user_id,
                     'RunLevel' => 'LeastPrivilege',
+                    'LogonType' => static::LOGON_TYPE_S4U,
                 ],
             ],
             'Settings' => [

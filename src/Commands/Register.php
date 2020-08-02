@@ -30,7 +30,14 @@ class Register extends Command
      */
     public function handle()
     {
+        exec('whoami', $output, $status);
+
+        if ($status !== 0) {
+            return $this->info('Unable to retrieve current user for task registration.');
+        }
+
         $task = new DeploymentTask([
+            'user_id' => reset($output),
             'name' => Str::studly(env('APP_NAME').'Deployment'),
             'author' => env('APP_NAME'),
             'description' => 'Automates application deployment.',
