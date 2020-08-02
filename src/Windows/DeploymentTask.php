@@ -13,5 +13,6 @@ class DeploymentTask extends ScheduledTask
         'interval' => 'PT1M',
         'time_limit' => 'PT30M',
         'command' => 'rocket:deploy',
+        'user_id' => DeploymentTask::USER_SYSTEM,
     ];
 }
