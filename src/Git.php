@@ -193,7 +193,7 @@ class Git
      */
     public function fetch()
     {
-        exec('git fetch 2>&1', $output, $status);
+        exec('git fetch --tags -f 2>&1', $output, $status);
 
         return $status === 0;
     }
