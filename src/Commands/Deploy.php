@@ -52,19 +52,23 @@ class Deploy extends Command
      */
     public function handle(Git $git, Rocket $rocket)
     {
+        if (! $git->fetch()) {
+            return $this->error('Unable to fetch git tags.');
+        }
+
         $current = $git->getCurrentTag();
         $latest = $git->getLatestTag();
 
         if (! $current) {
-            return $this->info('Unable to retrieve current git tag');
+            return $this->error('Unable to retrieve current git tag');
         }
 
         if (! $latest) {
-            return $this->info('Unable to retrieve latest git tag.');
+            return $this->error('Unable to retrieve latest git tag.');
         }
 
         if (! $this->tagIsOld($current, $latest)) {
-            return $this->info('No updates found.');
+            return $this->info('No new tags found to deploy.');
         }
 
         $this->call('down');
@@ -73,14 +77,12 @@ class Deploy extends Command
 
         logger()->info(sprintf('Updating tag from [%s] to [%s]', $current, $latest));
 
-        chdir(base_path());
-
         if (! $git->pull($latest)) {
             logger()->info(sprintf('Unable to deploy latest tag [%s]', $latest));
 
             $this->call('up');
 
-            return -1;
+            return $this->error("Unable to deploy latest tag [$latest]");
         }
 
         $this->runComposerInstall();
@@ -91,7 +93,7 @@ class Deploy extends Command
 
         $this->call('up');
 
-        return 0;
+        return $this->info("Successfully deployed tag [$latest]");
     }
 
     /**
@@ -109,18 +111,6 @@ class Deploy extends Command
     }
 
     /**
-     * Deploy the given tag.
-     *
-     * @param string $tag
-     *
-     * @return bool
-     */
-    protected function deploy($tag)
-    {
-
-    }
-
-    /**
      * Determine if the current tag is less than the latest.
      *
      * @param string $current
@@ -130,6 +120,22 @@ class Deploy extends Command
      */
     protected function tagIsOld($current, $latest)
     {
-        return version_compare($current, $latest, '<');
+        return version_compare(
+            $this->makeComparableVersion($current),
+            $this->makeComparableVersion($latest),
+            '<'
+        );
+    }
+
+    /**
+     * Make a comparable version string.
+     *
+     * @param string $version
+     *
+     * @return string
+     */
+    protected function makeComparableVersion($version)
+    {
+        return substr(ltrim($version, 'v'), 0, 5);
     }
 }
