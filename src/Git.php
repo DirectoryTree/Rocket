@@ -55,9 +55,9 @@ class Git
      */
     public function getLatestTag()
     {
-        exec('git describe --tags $(git rev-list --tags --max-count=1) 2>nul', $output, $status);
+        exec('git tag 2>nul', $output, $status);
 
-        return $status === 0 ? reset($output) : false;
+        return $status === 0 ? end($output) : false;
     }
 
     /**
