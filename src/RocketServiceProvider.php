@@ -40,7 +40,7 @@ class RocketServiceProvider extends ServiceProvider
             $config = $app['config']['rocket'];
 
             return new Git(
-                $config['git_key'], $config['git_username'], $config['git_remote'],
+                $config['git_username'], $config['git_key'], $config['git_remote']
             );
         });
 

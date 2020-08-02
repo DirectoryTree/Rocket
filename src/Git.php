@@ -123,8 +123,7 @@ class Git
 
         return implode('/', [
             $parts['scheme'].':/',
-            $this->username.':'.$this->token.'@',
-            $parts['host'].$parts['path'],
+            $this->username.':'.$this->token.'@'.$parts['host'].$parts['path'],
         ]);
     }
 
