@@ -24,13 +24,6 @@ class Deploy extends Command
     protected $description = 'Deploy the latest tagged application version';
 
     /**
-     * The Git instance.
-     *
-     * @var Git
-     */
-    protected $git;
-
-    /**
      * The Composer instance.
      *
      * @var Composer
@@ -40,28 +33,27 @@ class Deploy extends Command
     /**
      * Constructor.
      *
-     * @param Git      $git
      * @param Composer $composer
      */
-    public function __construct(Git $git, Composer $composer)
+    public function __construct(Composer $composer)
     {
         parent::__construct();
 
-        $this->git = $git;
         $this->composer = $composer;
     }
 
     /**
      * Execute the console command.
      *
+     * @param Git    $git
      * @param Rocket $rocket
      *
      * @return int
      */
-    public function handle(Rocket $rocket)
+    public function handle(Git $git, Rocket $rocket)
     {
-        $current = $this->git->getCurrentTag();
-        $latest = $this->git->getLatestTag();
+        $current = $git->getCurrentTag();
+        $latest = $git->getLatestTag();
 
         if (! $current) {
             return $this->info('Unable to retrieve current git tag');
@@ -83,17 +75,37 @@ class Deploy extends Command
 
         chdir(base_path());
 
-        if ($this->deploy($latest)) {
-            $rocket->runAfterCallbacks();
+        if (! $git->pull($latest)) {
+            logger()->info(sprintf('Unable to deploy latest tag [%s]', $latest));
 
-            logger()->info(sprintf('Completed deployment of version [%s]', $latest));
-        } else {
-            logger()->info(sprintf('Unable to deploy version [%s]', $latest));
+            $this->call('up');
+
+            return -1;
         }
+
+        $this->runComposerInstall();
+
+        $rocket->runAfterCallbacks();
+
+        logger()->info(sprintf('Completed deployment of tag [%s]', $latest));
 
         $this->call('up');
 
         return 0;
+    }
+
+    /**
+     * Execute composer package installation.
+     *
+     * @return void
+     */
+    protected function runComposerInstall()
+    {
+        $args = app()->isLocal()
+            ? ['--optimize-autoloader']
+            : ['--optimize-autoloader', '--no-dev'];
+
+        $this->composer->install($args);
     }
 
     /**
@@ -105,17 +117,7 @@ class Deploy extends Command
      */
     protected function deploy($tag)
     {
-        if (! $this->git->pull($tag)) {
-            return false;
-        }
 
-        $args = app()->isLocal()
-            ? ['--optimize-autoloader']
-            : ['--optimize-autoloader', '--no-dev'];
-
-        $this->composer->install($args);
-
-        return true;
     }
 
     /**
