@@ -22,6 +22,10 @@ class RocketServiceProvider extends ServiceProvider
                 Register::class,
                 MakeDeployment::class,
             ]);
+
+            $this->publishes([
+                __DIR__.'/../config/rocket.php' => config_path('rocket.php'),
+            ]);
         }
     }
 
@@ -33,7 +37,11 @@ class RocketServiceProvider extends ServiceProvider
     public function register()
     {
         $this->app->singleton(Git::class, function ($app) {
-            return new Git(env('GIT_KEY'), env('GIT_REMOTE'));
+            $config = $app['config']['rocket'];
+
+            return new Git(
+                $config['git_key'], $config['git_username'], $config['git_remote'],
+            );
         });
 
         $this->app->singleton('rocket', function () {

@@ -2,14 +2,23 @@
 
 namespace DirectoryTree\Rocket;
 
+use InvalidArgumentException;
+
 class Git
 {
     /**
-     * The git API key.
+     * The git username.
      *
      * @var string
      */
-    protected $key;
+    protected $username;
+
+    /**
+     * The git API token.
+     *
+     * @var string
+     */
+    protected $token;
 
     /**
      * The git remote.
@@ -21,12 +30,14 @@ class Git
     /**
      * Constructor.
      *
-     * @param string $key
+     * @param string $username
+     * @param string $token
      * @param string $remote
      */
-    public function __construct($key, $remote = 'origin')
+    public function __construct($username, $token, $remote = 'origin')
     {
-        $this->key = $key;
+        $this->username = $username;
+        $this->token = $token;
         $this->remote = $remote;
     }
 
@@ -40,11 +51,97 @@ class Git
      */
     public function addRemote($remote, $url)
     {
-        $command = sprintf('git remote add %s %s --tags 2>nul', $remote, $url);
+        $command = sprintf('git remote add %s %s --tags 2>&1', $remote, $url);
 
         exec($command, $output, $status);
 
         return $status === 0;
+    }
+
+    /**
+     * Change the URLs for the remote.
+     *
+     * @param string $remote
+     * @param string $newUrl
+     * @param
+     *
+     * @return bool
+     */
+    public function setRemoteUrl($remote, $newUrl)
+    {
+        exec("git remote set-url $remote $newUrl 2>&1", $output, $status);
+
+        return $status === 0;
+    }
+
+    /**
+     * Remove the specified remote.
+     *
+     * @param string $remote
+     *
+     * @return bool
+     */
+    public function removeRemote($remote)
+    {
+        exec("git remote rm $remote", $output, $status);
+
+        return $status === 0;
+    }
+
+    /**
+     * Convert the given git remote URL to token.
+     *
+     * @param string $remote
+     *
+     * @return bool
+     */
+    public function convertRemoteToToken($remote)
+    {
+        if (empty($this->token)) {
+            throw new InvalidArgumentException('No token has been defined');
+        }
+
+        if (! $urls = $this->getRemote($remote)) {
+            return false;
+        }
+
+        return $this->setRemoteUrl(
+            $remote, $this->makeTokenBasedUrl($urls['push'])
+        );
+    }
+
+    /**
+     * Make a token based URL from the given.
+     *
+     * @param string $url
+     *
+     * @return string
+     */
+    protected function makeTokenBasedUrl($url)
+    {
+        $parts = parse_url($url);
+
+        return implode('/', [
+            $parts['scheme'].':/',
+            $this->username.':'.$this->token.'@',
+            $parts['host'].$parts['path'],
+        ]);
+    }
+
+    /**
+     * Get the URLs for the remote.
+     *
+     * @param string $remote
+     *
+     * @return array|null
+     */
+    public function getRemote($remote)
+    {
+        foreach ($this->getRemotes() as $name => $urls) {
+            if ($name == $remote) {
+                return $urls;
+            }
+        }
     }
 
     /**
@@ -54,7 +151,7 @@ class Git
      */
     public function getRemotes()
     {
-        exec('git remote -v', $output, $status);
+        exec('git remote -v 2>&1', $output, $status);
 
         if ($status !== 0) {
             return [];
@@ -63,7 +160,11 @@ class Git
         $remotes = [];
 
         foreach ($output as $line) {
-            //
+            [$remote, $url, $type] = preg_split('/\s+/', $line);
+
+            $type = str_replace(['(', ')'], '', $type);
+
+            $remotes[$remote][$type] = $url;
         }
 
         return $remotes;
@@ -78,7 +179,7 @@ class Git
      */
     public function pull($tag)
     {
-        $command = sprintf('git pull %s %s --ff-only 2>nul', $this->remote, $tag);
+        $command = sprintf('git pull %s %s --ff-only 2>&1', $this->remote, $tag);
 
         exec($command, $output, $status);
 
@@ -94,7 +195,7 @@ class Git
      */
     public function reset($tag = null)
     {
-        $command = implode(' ', array_filter(['git reset --hard', $tag, '2>nul']));
+        $command = implode(' ', array_filter(['git reset --hard', $tag, '2>&1']));
 
         exec($command, $output, $status);
 
@@ -120,7 +221,7 @@ class Git
      */
     public function getLatestTag()
     {
-        exec('git tag 2>nul', $output, $status);
+        exec('git tag 2>&1', $output, $status);
 
         return $status === 0 ? end($output) : false;
     }
@@ -132,7 +233,7 @@ class Git
      */
     public function getCurrentTag()
     {
-        exec('git describe --tags --exact-match 2>nul', $output, $status);
+        exec('git describe --tags --exact-match 2>&1', $output, $status);
 
         return $status === 0 ? reset($output) : false;
     }
