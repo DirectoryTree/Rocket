@@ -21,7 +21,7 @@ class Deploy extends Command
      *
      * @var string
      */
-    protected $description = 'Deploy the latest tagged application version.';
+    protected $description = 'Deploy the latest tagged application version';
 
     /**
      * The Git instance.

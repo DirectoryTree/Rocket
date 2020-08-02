@@ -29,7 +29,7 @@ class Git
      */
     public function reset($tag = null)
     {
-        $command = implode(' ', array_filter(['git reset --hard', $tag]));
+        $command = implode(' ', array_filter(['git reset --hard', $tag, '2>nul']));
 
         exec($command, $output, $status);
 
