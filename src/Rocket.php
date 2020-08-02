@@ -10,8 +10,7 @@ class Rocket
      * @var array
      */
     protected $callbacks = [
-        'before' => [],
-        'after' => [],
+        'before' => [], 'after' => [],
     ];
 
     /**

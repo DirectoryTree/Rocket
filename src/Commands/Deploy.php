@@ -4,8 +4,8 @@ namespace DirectoryTree\Rocket\Commands;
 
 use DirectoryTree\Rocket\Git;
 use DirectoryTree\Rocket\Rocket;
+use DirectoryTree\Rocket\Composer;
 use Illuminate\Console\Command;
-use Illuminate\Support\Composer;
 
 class Deploy extends Command
 {
@@ -102,10 +102,10 @@ class Deploy extends Command
         }
 
         $args = app()->isLocal()
-            ? ['--optimize']
-            : ['--optimize', '--no-dev'];
+            ? ['--optimize-autoloader']
+            : ['--optimize-autoloader', '--no-dev'];
 
-        $this->composer->dumpAutoloads($args);
+        $this->composer->install($args);
 
         return true;
     }
