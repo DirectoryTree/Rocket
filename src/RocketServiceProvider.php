@@ -32,6 +32,10 @@ class RocketServiceProvider extends ServiceProvider
      */
     public function register()
     {
+        $this->app->singleton(Git::class, function ($app) {
+            return new Git(env('GIT_KEY'), env('GIT_REMOTE'));
+        });
+
         $this->app->singleton('rocket', function () {
             return new Rocket;
         });
