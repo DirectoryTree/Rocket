@@ -63,6 +63,14 @@ class Deploy extends Command
         $current = $this->git->getCurrentTag();
         $latest = $this->git->getLatestTag();
 
+        if (! $current) {
+            return $this->info('Unable to retrieve current git tag');
+        }
+
+        if (! $latest) {
+            return $this->info('Unable to retrieve latest git tag.');
+        }
+
         if (! $this->tagIsOld($current, $latest)) {
             return $this->info('No updates found.');
         }

@@ -55,7 +55,7 @@ class Git
      */
     public function getLatestTag()
     {
-        exec('git tag --sort=committerdate 2>nul | tail -1', $output, $status);
+        exec('git describe --tags $(git rev-list --tags --max-count=1) 2>nul', $output, $status);
 
         return $status === 0 ? reset($output) : false;
     }
