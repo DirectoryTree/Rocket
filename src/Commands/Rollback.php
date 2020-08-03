@@ -79,11 +79,19 @@ class Rollback extends Command
 
         logger()->info("Rolling back from tag [$currentTag] to [$previousTag]");
 
+        $this->call('down');
+
+        $rocket->runBeforeCallbacks();
+
         if (! $git->reset($previousTag)) {
             return $this->error("Unable to rollback repository to tag [$previousTag]");
         }
 
         $this->composer->install();
+
+        $this->call('up');
+
+        $rocket->runAfterCallbacks();
 
         logger()->info("Rolled back to tag [$previousTag].");
 

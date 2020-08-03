@@ -6,7 +6,6 @@ use TitasGailius\Terminal\Response;
 
 trait FormatsConsoleOutput
 {
-
     /**
      * Get lines from the console command response.
      *
