@@ -3,6 +3,8 @@
 namespace DirectoryTree\Rocket;
 
 use InvalidArgumentException;
+use TitasGailius\Terminal\Response;
+use TitasGailius\Terminal\Terminal;
 
 class Git
 {
@@ -51,11 +53,9 @@ class Git
      */
     public function addRemote($remote, $url)
     {
-        $command = sprintf('git remote add %s %s --tags 2>&1', $remote, $url);
-
-        exec($command, $output, $status);
-
-        return $status === 0;
+        return Terminal::with(['remote' => $remote, 'url' => $url])
+            ->run('git remote add {{ $remote }} {{ $url }}')
+            ->successful();
     }
 
     /**
@@ -69,9 +69,9 @@ class Git
      */
     public function setRemoteUrl($remote, $newUrl)
     {
-        exec("git remote set-url $remote $newUrl 2>&1", $output, $status);
-
-        return $status === 0;
+        return Terminal::with(['remote' => $remote, 'newUrl' => $newUrl])
+            ->run('git remote set-url {{ $remote }} {{ $newUrl }}')
+            ->successful();
     }
 
     /**
@@ -83,9 +83,9 @@ class Git
      */
     public function removeRemote($remote)
     {
-        exec("git remote rm $remote", $output, $status);
-
-        return $status === 0;
+        return Terminal::with(['remote' => $remote])
+            ->run('git remote rm {{ $remote }}')
+            ->successful();
     }
 
     /**
@@ -150,16 +150,18 @@ class Git
      */
     public function getRemotes()
     {
-        exec('git remote -v 2>&1', $output, $status);
+        $response = Terminal::run('git remote -v');
 
-        if ($status !== 0) {
+        if (! $response->successful()) {
             return [];
         }
 
+        $lines = $this->getLinesFromResponse($response->output());
+
         $remotes = [];
 
-        foreach ($output as $line) {
-            [$remote, $url, $type] = preg_split('/\s+/', $line);
+        foreach ($lines as $line) {
+            [$remote, $url, $type] = $this->splitLineOutput($line);
 
             $type = str_replace(['(', ')'], '', $type);
 
@@ -178,11 +180,9 @@ class Git
      */
     public function pull($tag)
     {
-        $command = sprintf('git pull %s %s --ff-only 2>&1', $this->remote, $tag);
-
-        exec($command, $output, $status);
-
-        return $status === 0;
+        return Terminal::with(['remote' => $this->remote, 'tag' => $tag])
+            ->run('git pull {{ $remote }} {{ $tag }} --ff-only')
+            ->successful();
     }
 
     /**
@@ -192,9 +192,8 @@ class Git
      */
     public function fetch()
     {
-        exec('git fetch --tags -f 2>&1', $output, $status);
-
-        return $status === 0;
+        return Terminal::run('git fetch --tags -f')
+            ->successful();
     }
 
     /**
@@ -206,11 +205,9 @@ class Git
      */
     public function reset($tag = null)
     {
-        $command = implode(' ', array_filter(['git reset --hard', $tag, '2>&1']));
-
-        exec($command, $output, $status);
-
-        return $status === 0;
+        return Terminal::with(['tag' => $tag])
+            ->run('git reset --hard {{ $tag }}')
+            ->successful();
     }
 
     /**
@@ -220,9 +217,11 @@ class Git
      */
     public function getAllTags()
     {
-        exec('git tag', $output, $status);
+        $response = Terminal::run('git tag');
 
-        return $status === 0 ? $output : [];
+        return $response->successful()
+            ? $this->getLinesFromResponse($response)
+            : [];
     }
 
     /**
@@ -232,9 +231,9 @@ class Git
      */
     public function getLatestTag()
     {
-        exec('git tag 2>&1', $output, $status);
+        $tags = $this->getAllTags();
 
-        return $status === 0 ? end($output) : false;
+        return end($tags);
     }
 
     /**
@@ -244,8 +243,50 @@ class Git
      */
     public function getCurrentTag()
     {
-        exec('git describe --tags 2>&1', $output, $status);
+        $response = Terminal::run('git describe --tags');
 
-        return $status === 0 ? reset($output) : false;
+        $response->successful()
+            ? $this->trimOutput($response->output())
+            : false;
+    }
+
+    /**
+     * Get lines from the console command response.
+     *
+     * @param Response $response
+     *
+     * @return array
+     */
+    protected function getLinesFromResponse(Response $response)
+    {
+        return array_filter(
+            preg_split('/\n+/', $response->output()) ?? []
+        );
+    }
+
+    /**
+     * Trims the console output of tabs and spaces.
+     *
+     * @param string $output
+     *
+     * @return string
+     */
+    protected function trimOutput($output)
+    {
+        $split = $this->splitLineOutput($output);
+
+        return reset($split);
+    }
+
+    /**
+     * Split the line output by spaces.
+     *
+     * @param string $output
+     *
+     * @return array
+     */
+    protected function splitLineOutput($output)
+    {
+        return preg_split('/\s+/', $output) ?? [];
     }
 }
