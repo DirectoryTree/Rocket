@@ -3,11 +3,12 @@
 namespace DirectoryTree\Rocket;
 
 use InvalidArgumentException;
-use TitasGailius\Terminal\Response;
 use TitasGailius\Terminal\Terminal;
 
 class Git
 {
+    use FormatsConsoleOutput;
+
     /**
      * The git username.
      *
@@ -248,45 +249,5 @@ class Git
         $response->successful()
             ? $this->trimOutput($response->output())
             : false;
-    }
-
-    /**
-     * Get lines from the console command response.
-     *
-     * @param Response $response
-     *
-     * @return array
-     */
-    protected function getLinesFromResponse(Response $response)
-    {
-        return array_filter(
-            preg_split('/\n+/', $response->output()) ?? []
-        );
-    }
-
-    /**
-     * Trims the console output of tabs and spaces.
-     *
-     * @param string $output
-     *
-     * @return string
-     */
-    protected function trimOutput($output)
-    {
-        $split = $this->splitLineOutput($output);
-
-        return reset($split);
-    }
-
-    /**
-     * Split the line output by spaces.
-     *
-     * @param string $output
-     *
-     * @return array
-     */
-    protected function splitLineOutput($output)
-    {
-        return preg_split('/\s+/', $output) ?? [];
     }
 }

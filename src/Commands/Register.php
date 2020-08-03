@@ -5,7 +5,7 @@ namespace DirectoryTree\Rocket\Commands;
 use Illuminate\Support\Str;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
-use TitasGailius\Terminal\Terminal;
+use DirectoryTree\Rocket\System;
 use DirectoryTree\Rocket\Windows\DeploymentTask;
 
 class Register extends Command
@@ -32,9 +32,13 @@ class Register extends Command
     public function handle()
     {
         if (! $this->option('as-system')) {
-            $user = Terminal::run('whoami')->output();
+            $user = (new System)->getCurrentUser();
         } else {
             $user = DeploymentTask::USER_SYSTEM;
+        }
+
+        if (! $user) {
+            return $this->error('Unable to retrieve user to register scheduled task.');
         }
 
         $task = new DeploymentTask([
