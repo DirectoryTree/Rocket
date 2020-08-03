@@ -9,15 +9,15 @@ class Composer extends BaseComposer
     /**
      * Install the composer dependencies.
      *
-     * @param string $extra
-     *
      * @return void
      */
-    public function install($extra = '')
+    public function install()
     {
-        $extra = $extra ? (array) $extra : [];
+        $args = app()->isLocal()
+            ? ['--optimize-autoloader']
+            : ['--optimize-autoloader', '--no-dev'];
 
-        $command = array_merge($this->findComposer(), ['install'], $extra);
+        $command = array_merge($this->findComposer(), ['install'], $args);
 
         $this->getProcess($command)->run();
     }

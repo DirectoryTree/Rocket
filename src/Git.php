@@ -246,7 +246,7 @@ class Git
     {
         $response = Terminal::run('git describe --tags');
 
-        $response->successful()
+        return $response->successful()
             ? $this->trimOutput($response->output())
             : false;
     }

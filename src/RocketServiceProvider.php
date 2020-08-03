@@ -4,6 +4,7 @@ namespace DirectoryTree\Rocket;
 
 use Illuminate\Support\ServiceProvider;
 use DirectoryTree\Rocket\Commands\Deploy;
+use DirectoryTree\Rocket\Commands\Rollback;
 use DirectoryTree\Rocket\Commands\Register;
 use DirectoryTree\Rocket\Commands\MakeDeployment;
 
@@ -19,6 +20,7 @@ class RocketServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 Deploy::class,
+                Rollback::class,
                 Register::class,
                 MakeDeployment::class,
             ]);

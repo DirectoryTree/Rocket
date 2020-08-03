@@ -25,17 +25,34 @@ class Register extends Command
     protected $description = 'Register the deployment scheduler';
 
     /**
+     * The system instance.
+     *
+     * @var System
+     */
+    protected $system;
+
+    /**
+     * Constructor.
+     *
+     * @param System $system
+     */
+    public function __construct(System $system)
+    {
+        parent::__construct();
+
+        $this->system = $system;
+    }
+
+    /**
      * Execute the console command.
      *
      * @return int
      */
     public function handle()
     {
-        if (! $this->option('as-system')) {
-            $user = (new System)->getCurrentUser();
-        } else {
-            $user = DeploymentTask::USER_SYSTEM;
-        }
+        $user = ! empty($this->option('as-system'))
+            ? DeploymentTask::USER_SYSTEM
+            : $this->system->getCurrentUser();
 
         if (! $user) {
             return $this->error('Unable to retrieve user to register scheduled task.');
@@ -54,13 +71,11 @@ class Register extends Command
 
         File::put($taskPath, $task->toXml());
 
-        $response = Terminal::run(
-            sprintf('schtasks /Create /TN "%s" /XML "%s" /F', $task->name, $taskPath)
-        );
+        $imported = $this->system->importScheduledTask($task->name, $taskPath);
 
         File::delete($taskPath);
 
-        return $response->successful()
+        return $imported
             ? $this->info('Successfully registered scheduled task.')
             : $this->error('Unable to register scheduled task.');
     }
