@@ -129,6 +129,36 @@ class Git
     }
 
     /**
+     * Get an associative array of the list of commits between two tags.
+     *
+     * @param string $startTag
+     * @param string $endTag
+     *
+     * @return false
+     */
+    public function getCommitsBetween($startTag, $endTag)
+    {
+        $response = Terminal::with(['start' => $startTag, 'end' => $endTag])
+            ->run('git log --pretty=oneline {{ $start }}...{{ $end }}');
+
+        if (! $response->successful()) {
+            return false;
+        }
+
+        $lines = $this->getLinesFromResponse($response);
+
+        $commits = [];
+
+        foreach ($lines as $commit) {
+            [$ref, $message] = str_split($commit, 40);
+
+            $commits[$ref] = trim($message);
+        }
+
+        return $commits;
+    }
+
+    /**
      * Get the URLs for the remote.
      *
      * @param string $remote

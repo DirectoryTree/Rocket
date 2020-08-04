@@ -57,15 +57,13 @@ class Deploy extends Command
             return $this->error('Unable to fetch git tags.');
         }
 
-        $currentTag = $git->getCurrentTag();
-        $latestTag = $git->getLatestTag();
-
-        if (! $currentTag) {
-            return $this->error('Unable to retrieve current git tag');
-        }
-
-        if (! $latestTag) {
-            return $this->error('Unable to retrieve latest git tag.');
+        switch (true) {
+            case empty($currentTag = $git->getCurrentTag()): {
+                return $this->error('Unable to retrieve current git tag');
+            }
+            case empty($latestTag = $git->getLatestTag()): {
+                return $this->error('Unable to retrieve latest git tag.');
+            }
         }
 
         if (! (new Tag($currentTag))->isOlderThan($latestTag)) {
