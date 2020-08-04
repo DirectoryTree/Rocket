@@ -84,6 +84,8 @@ class Rollback extends Command
         $rocket->runBeforeCallbacks();
 
         if (! $git->reset($previousTag)) {
+            $this->call('up');
+
             return $this->error("Unable to rollback repository to tag [$previousTag]");
         }
 
