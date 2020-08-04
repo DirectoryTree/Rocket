@@ -69,21 +69,21 @@ class Tag
     protected function compareTags($first, $second, $operator = '=')
     {
         return version_compare(
-            $this->makeComparableVersion($first),
-            $this->makeComparableVersion($second),
+            $this->makeComparableTag($first),
+            $this->makeComparableTag($second),
             $operator
         );
     }
 
     /**
-     * Make a comparable version string.
+     * Make a comparable tag.
      *
-     * @param string $version
+     * @param string $tag
      *
      * @return string
      */
-    protected function makeComparableVersion($version)
+    protected function makeComparableTag($tag)
     {
-        return substr(ltrim($version, 'v'), 0, 5);
+        return substr(ltrim($tag, 'v'), 0, 5);
     }
 }
