@@ -45,134 +45,6 @@ class Git
     }
 
     /**
-     * Add a remote URL to the current git repo.
-     *
-     * @param string $remote
-     * @param string $url
-     *
-     * @return bool
-     */
-    public function addRemote($remote, $url)
-    {
-        return Terminal::with(['remote' => $remote, 'url' => $url])
-            ->run('git remote add {{ $remote }} {{ $url }}')
-            ->successful();
-    }
-
-    /**
-     * Change the URLs for the remote.
-     *
-     * @param string $remote
-     * @param string $newUrl
-     * @param
-     *
-     * @return bool
-     */
-    public function setRemoteUrl($remote, $newUrl)
-    {
-        return Terminal::with(['remote' => $remote, 'newUrl' => $newUrl])
-            ->run('git remote set-url {{ $remote }} {{ $newUrl }}')
-            ->successful();
-    }
-
-    /**
-     * Remove the specified remote.
-     *
-     * @param string $remote
-     *
-     * @return bool
-     */
-    public function removeRemote($remote)
-    {
-        return Terminal::with(['remote' => $remote])
-            ->run('git remote rm {{ $remote }}')
-            ->successful();
-    }
-
-    /**
-     * Convert the given git remote URL to token.
-     *
-     * @param string $remote
-     *
-     * @return bool
-     */
-    public function convertRemoteToToken($remote)
-    {
-        if (empty($this->token)) {
-            throw new InvalidArgumentException('No token has been defined');
-        }
-
-        if (! $urls = $this->getRemote($remote)) {
-            return false;
-        }
-
-        return $this->setRemoteUrl(
-            $remote, $this->makeTokenBasedUrl($urls['push'])
-        );
-    }
-
-    /**
-     * Make a token based URL from the given.
-     *
-     * @param string $url
-     *
-     * @return string
-     */
-    protected function makeTokenBasedUrl($url)
-    {
-        $parts = parse_url($url);
-
-        return implode('/', [
-            $parts['scheme'].':/',
-            $this->username.':'.$this->token.'@'.$parts['host'].$parts['path'],
-        ]);
-    }
-
-    /**
-     * Get the URLs for the remote.
-     *
-     * @param string $remote
-     *
-     * @return array|null
-     */
-    public function getRemote($remote)
-    {
-        foreach ($this->getRemotes() as $name => $urls) {
-            if ($name == $remote) {
-                return $urls;
-            }
-        }
-    }
-
-    /**
-     * Get the available tracked repositories
-     *
-     * @return array
-     */
-    public function getRemotes()
-    {
-        $response = Terminal::run('git remote -v');
-
-        if (! $response->successful()) {
-            return [];
-        }
-
-        $lines = $this->getLinesFromResponse($response->output());
-
-        $remotes = [];
-
-        foreach ($lines as $line) {
-            [$remote, $url, $type] = $this->splitLineOutput($line);
-
-            $type = str_replace(['(', ')'], '', $type);
-
-            $remotes[$remote][$type] = $url;
-        }
-
-        return $remotes;
-    }
-
-    /**
      * Update to the given repository tag.
      *
      * @param string $tag
@@ -249,5 +121,163 @@ class Git
         return $response->successful()
             ? $this->trimOutput($response->output())
             : false;
+    }
+
+    /**
+     * Get an associative array of the list of commits between two tags.
+     *
+     * @param string $startTag
+     * @param string $endTag
+     *
+     * @return array|false
+     */
+    public function getCommitsBetween($startTag, $endTag)
+    {
+        $response = Terminal::with(['start' => $startTag, 'end' => $endTag])
+            ->run('git log --pretty=oneline {{ $start }}...{{ $end }}');
+
+        if (! $response->successful()) {
+            return false;
+        }
+
+        $lines = $this->getLinesFromResponse($response);
+
+        $commits = [];
+
+        foreach ($lines as $commit) {
+            [$ref, $message] = str_split($commit, 40);
+
+            $commits[$ref] = trim($message);
+        }
+
+        return $commits;
+    }
+
+    /**
+     * Add a remote URL to the current git repo.
+     *
+     * @param string $remote
+     * @param string $url
+     *
+     * @return bool
+     */
+    public function addRemote($remote, $url)
+    {
+        return Terminal::with(['remote' => $remote, 'url' => $url])
+            ->run('git remote add {{ $remote }} {{ $url }}')
+            ->successful();
+    }
+
+    /**
+     * Change the URLs for the remote.
+     *
+     * @param string $remote
+     * @param string $newUrl
+     * @param
+     *
+     * @return bool
+     */
+    public function setRemoteUrl($remote, $newUrl)
+    {
+        return Terminal::with(['remote' => $remote, 'newUrl' => $newUrl])
+            ->run('git remote set-url {{ $remote }} {{ $newUrl }}')
+            ->successful();
+    }
+
+    /**
+     * Remove the specified remote.
+     *
+     * @param string $remote
+     *
+     * @return bool
+     */
+    public function removeRemote($remote)
+    {
+        return Terminal::with(['remote' => $remote])
+            ->run('git remote rm {{ $remote }}')
+            ->successful();
+    }
+
+    /**
+     * Get the URLs for the remote.
+     *
+     * @param string $remote
+     *
+     * @return array|null
+     */
+    public function getRemote($remote)
+    {
+        foreach ($this->getRemotes() as $name => $urls) {
+            if ($name == $remote) {
+                return $urls;
+            }
+        }
+    }
+
+    /**
+     * Get the available tracked repositories
+     *
+     * @return array
+     */
+    public function getRemotes()
+    {
+        $response = Terminal::run('git remote -v');
+
+        if (! $response->successful()) {
+            return [];
+        }
+
+        $lines = $this->getLinesFromResponse($response->output());
+
+        $remotes = [];
+
+        foreach ($lines as $line) {
+            [$remote, $url, $type] = $this->splitLineOutput($line);
+
+            $type = str_replace(['(', ')'], '', $type);
+
+            $remotes[$remote][$type] = $url;
+        }
+
+        return $remotes;
+    }
+
+    /**
+     * Convert the given git remote URL to token.
+     *
+     * @param string $remote
+     *
+     * @return bool
+     */
+    public function convertRemoteToToken($remote)
+    {
+        if (empty($this->token)) {
+            throw new InvalidArgumentException('No token has been defined');
+        }
+
+        if (! $urls = $this->getRemote($remote)) {
+            return false;
+        }
+
+        return $this->setRemoteUrl(
+            $remote, $this->makeTokenBasedUrl($urls['push'])
+        );
+    }
+
+    /**
+     * Make a token based URL from the given.
+     *
+     * @param string $url
+     *
+     * @return string
+     */
+    protected function makeTokenBasedUrl($url)
+    {
+        $parts = parse_url($url);
+
+        return implode('/', [
+            $parts['scheme'].':/',
+            $this->username.':'.$this->token.'@'.$parts['host'].$parts['path'],
+        ]);
     }
 }
