@@ -1,14 +1,10 @@
 <?php
 
-namespace DirectoryTree\Rocket\Tests;
+namespace Tests;
 
-use DirectoryTree\Rocket\RocketServiceProvider;
-use Orchestra\Testbench\TestCase as BaseTestCase;
+use LaravelZero\Framework\Testing\TestCase as BaseTestCase;
 
-class TestCase extends BaseTestCase
+abstract class TestCase extends BaseTestCase
 {
-    protected function getPackageProviders($app)
-    {
-        return [RocketServiceProvider::class];
-    }
+    use CreatesApplication;
 }

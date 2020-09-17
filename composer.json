@@ -1,56 +1,46 @@
 {
     "name": "directorytree/rocket",
-    "description": "A Laravel application deployment tool utilizing git.",
-    "keywords": [
-        "directorytree",
-        "rocket"
-    ],
-    "homepage": "https://github.com/directorytree/rocket",
+    "description": "Automated application deployments.",
+    "keywords": ["framework", "laravel", "laravel zero", "console", "cli"],
+    "homepage": "https://laravel-zero.com",
+    "type": "project",
     "license": "MIT",
-    "type": "library",
+    "support": {
+        "issues": "https://github.com/laravel-zero/laravel-zero/issues",
+        "source": "https://github.com/laravel-zero/laravel-zero"
+    },
     "authors": [
         {
             "name": "Steve Bauman",
-            "email": "steven_bauman@outlook.com",
-            "role": "Developer"
+            "email": "steven_bauman@outlook.com"
         }
     ],
     "require": {
-        "php": ">=7.2",
-        "illuminate/support": "^5.6|^6.0|^7.0",
+        "php": "^7.3",
+        "laravel-zero/framework": "^8.0",
         "spatie/array-to-xml": "^2.12",
         "titasgailius/terminal": "^0.4.0"
     },
     "require-dev": {
-        "orchestra/testbench": "^4.0|^5.0",
-        "phpunit/phpunit": "^8.0"
+        "mockery/mockery": "^1.4.2",
+        "phpunit/phpunit": "^9.3"
     },
     "autoload": {
         "psr-4": {
-            "DirectoryTree\\Rocket\\": "src"
+            "App\\": "app/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "DirectoryTree\\Rocket\\Tests\\": "tests"
+            "Tests\\": "tests/"
         }
-    },
-    "scripts": {
-        "test": "vendor/bin/phpunit",
-        "test-coverage": "vendor/bin/phpunit --coverage-html coverage"
-
     },
     "config": {
-        "sort-packages": true
+        "preferred-install": "dist",
+        "sort-packages": true,
+        "optimize-autoloader": true
     },
-    "extra": {
-        "laravel": {
-            "providers": [
-                "DirectoryTree\\Rocket\\RocketServiceProvider"
-            ],
-            "aliases": {
-                "Rocket": "Rocket"
-            }
-        }
-    }
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "bin": ["application"]
 }
