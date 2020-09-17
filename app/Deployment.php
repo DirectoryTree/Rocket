@@ -45,7 +45,7 @@ class Deployment
     {
         $this->composer = $composer;
         $this->application = $application;
-        $this->applicationName = basename(getcwd());
+        $this->applicationName = basename($application['path']);
         $this->git = new Git($application['git']['remote'] ?? 'origin');
     }
 
@@ -73,7 +73,11 @@ class Deployment
             return $command->info($this->makeMessage("No new tags found to deploy. Current tag is [$currentTag]"));
         }
 
-        $this->takeApplicationDown();
+        if (! $this->takeApplicationDown()) {
+            return $command->error(
+                $this->makeMessage('There was an error attempting to bring the application down.')
+            );
+        }
 
         $command->info(
             $this->makeMessage(sprintf('Updating tag from [%s] to [%s]', $currentTag, $latestTag))
