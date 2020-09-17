@@ -58,7 +58,11 @@ class Deploy extends Command
      */
     public function handle()
     {
-        foreach ($this->config->getApplications() as $application) {
+        if (empty($applications = $this->config->getApplications())) {
+            return $this->error('There are no registered applications to deploy.');
+        }
+
+        foreach ($applications as $application) {
             if (! chdir($application['path'])) {
                 return $this->error("Unable to change current directory to [{$application['path']}");
             }
