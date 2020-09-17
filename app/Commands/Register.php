@@ -4,6 +4,7 @@ namespace App\Commands;
 
 use App\Configuration;
 use Illuminate\Console\Command;
+use Illuminate\Filesystem\Filesystem;
 
 class Register extends Command
 {
@@ -43,11 +44,17 @@ class Register extends Command
     /**
      * Execute the console command.
      *
+     * @param Filesystem $files
+     *
      * @return void
      */
-    public function handle()
+    public function handle(Filesystem $files)
     {
         $directory = $this->argument('directory') ?? getcwd();
+
+        if (! $files->exists($directory)) {
+            return $this->error('Directory does not exist.');
+        }
 
         $this->config->addApplication($directory);
 
