@@ -3,6 +3,7 @@
 namespace App\Commands;
 
 use App\System;
+use App\WindowsSystem;
 use App\Windows\DeploymentTask;
 use Illuminate\Support\Str;
 use Illuminate\Console\Command;
@@ -34,9 +35,9 @@ class InstallTask extends Command
     /**
      * Constructor.
      *
-     * @param System $system
+     * @param WindowsSystem $system
      */
-    public function __construct(System $system)
+    public function __construct(WindowsSystem $system)
     {
         parent::__construct();
 
