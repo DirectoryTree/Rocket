@@ -209,7 +209,7 @@ class Git
             return [];
         }
 
-        $lines = $this->getLinesFromResponse($response->output());
+        $lines = $this->getLinesFromResponse($response);
 
         $remotes = [];
 
@@ -235,7 +235,7 @@ class Git
      */
     public function convertRemoteToToken($username, $token, $remote)
     {
-        if (empty($this->token)) {
+        if (empty($token)) {
             throw new InvalidArgumentException('No token has been defined');
         }
 
