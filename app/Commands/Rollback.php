@@ -2,10 +2,9 @@
 
 namespace App\Commands;
 
-use App\Git;
-use App\Tag;
-use App\Rocket;
 use App\Composer;
+use App\Deployment;
+use App\Configuration;
 use Illuminate\Console\Command;
 
 class Rollback extends Command
@@ -15,14 +14,21 @@ class Rollback extends Command
      *
      * @var string
      */
-    protected $signature = 'rollback';
+    protected $signature = 'rollback {path} {--tag=}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Rollback to the previously tagged application version';
+    protected $description = 'Rollback to the previously tagged application version.';
+
+    /**
+     * The configuration instance.
+     *
+     * @var Configuration
+     */
+    protected $config;
 
     /**
      * The composer instance.
@@ -34,69 +40,53 @@ class Rollback extends Command
     /**
      * Constructor.
      *
-     * @param Composer $composer
+     * @param Configuration $config
+     * @param Composer      $composer
      */
-    public function __construct(Composer $composer)
+    public function __construct(Configuration $config, Composer $composer)
     {
         parent::__construct();
 
+        $this->config = $config;
         $this->composer = $composer;
     }
 
     /**
      * Execute the console command.
      *
-     * @param Git    $git
-     * @param Rocket $rocket
+     * @return void
+     */
+    public function handle()
+    {
+        if (empty($apps = $this->config->getApplications())) {
+            return $this->error('There are no registered applications to rollback.');
+        }
+
+        $path = $this->argument('path');
+
+        $key = array_search($path, array_column($apps, 'path'));
+
+        if ($key === false) {
+            return $this->error("There is no application registered with path [$path].");
+        }
+
+        return $this->rollback($apps[$key], $this->option('tag'));
+    }
+
+    /**
+     * Rollback the application to the specified tag.
+     *
+     * @param array       $app
+     * @param string|null $tag
      *
      * @return void
      */
-    public function handle(Git $git, Rocket $rocket)
+    protected function rollback($app, $tag = null)
     {
-        if (! $git->fetch()) {
-            return $this->error('Unable to fetch all repository tags.');
+        if (! chdir($app['path'])) {
+            return $this->error("Unable to change current directory to [{$app['path']}");
         }
 
-        $currentTag = $git->getCurrentTag();
-
-        if (! $currentTag) {
-            return $this->error('Unable to get current repository tag.');
-        }
-
-        $tags = $git->getAllTags();
-
-        array_pop($tags);
-
-        $previousTag = end($tags);
-
-        if (! $previousTag) {
-            return $this->error('Unable to retrieve last repository tag.');
-        }
-
-        if (! (new Tag($currentTag))->isNewerThan($previousTag)) {
-            return $this->error('The current repository tag is not newer than the last.');
-        }
-
-        logger()->info("Rolling back from tag [$currentTag] to [$previousTag]");
-
-        $this->call('down');
-
-        $rocket->runBeforeCallbacks();
-
-        if (! $git->reset($previousTag)) {
-            $this->call('up');
-
-            return $this->error("Unable to rollback repository to tag [$previousTag]");
-        }
-
-        $this->composer->install();
-
-        $this->call('up');
-
-        $rocket->runAfterCallbacks();
-
-        logger()->info("Rolled back to tag [$previousTag].");
-
-        return $this->info("Successfully rolled back to tag [$previousTag]");
+        (new Deployment($this->composer, $app))->rollback($this, $tag);
     }
 }

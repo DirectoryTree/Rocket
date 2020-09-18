@@ -14,7 +14,7 @@ class Deploy extends Command
      *
      * @var string
      */
-    protected $signature = 'deploy';
+    protected $signature = 'deploy {path?} {--tag=}';
 
     /**
      * The console command description.
@@ -58,16 +58,39 @@ class Deploy extends Command
      */
     public function handle()
     {
-        if (empty($applications = $this->config->getApplications())) {
+        if (empty($apps = $this->config->getApplications())) {
             return $this->error('There are no registered applications to deploy.');
         }
 
-        foreach ($applications as $application) {
-            if (! chdir($application['path'])) {
-                return $this->error("Unable to change current directory to [{$application['path']}");
+        if ($path = $this->argument('path')) {
+            $key = array_search($path, array_column($apps, 'path'));
+
+            if ($key === false) {
+                return $this->error("There is no application registered with path [$path].");
             }
 
-            (new Deployment($this->composer, $application))->run($this);
+            return $this->deploy($apps[$key], $this->option('tag'));
         }
+
+        foreach ($apps as $app) {
+            $this->deploy($app);
+        }
+    }
+
+    /**
+     * Deploy the application.
+     *
+     * @param array       $app
+     * @param string|null $tag
+     *
+     * @return void
+     */
+    protected function deploy($app, $tag = null)
+    {
+        if (! chdir($app['path'])) {
+            return $this->error("Unable to change current directory to [{$app['path']}");
+        }
+
+        (new Deployment($this->composer, $app))->upgrade($this, $tag);
     }
 }

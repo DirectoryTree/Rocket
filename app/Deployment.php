@@ -2,7 +2,7 @@
 
 namespace App;
 
-use App\Commands\Deploy;
+use Illuminate\Console\Command;
 use TitasGailius\Terminal\Terminal;
 
 class Deployment
@@ -54,26 +54,30 @@ class Deployment
     /**
      * Execute the deployment.
      *
-     * @param Deploy $command
+     * @param Command      $command
+     * @param string|null  $tag
      *
      * @return void
      */
-    public function run(Deploy $command)
+    public function upgrade(Command $command, $tag = null)
     {
         if (! $this->git->fetch()) {
             return $command->error($this->message('Unable to fetch git tags.'));
         }
 
-        switch (true) {
-            case empty($currentTag = $this->git->getCurrentTag()):
-                return $command->error($this->message('Unable to retrieve current git tag'));
-            case empty($latestTag = $this->git->getLatestTag()):
-                return $command->error($this->message('Unable to retrieve latest git tag.'));
+        if (empty($currentTag = $this->git->getCurrentTag())) {
+            return $command->error($this->message('Unable to retrieve current git tag'));
         }
 
-        if (! (new Tag($currentTag))->isOlderThan($latestTag)) {
-            return $command->info($this->message("No new tags found to deploy. Current tag is [$currentTag]"));
+        if (empty($nextTag = $tag ?? $this->git->getNextTag($currentTag))) {
+            return $command->error($this->message('Unable to retrieve next git tag.'));
         }
+
+        if (! (new Tag($currentTag))->isOlderThan($nextTag)) {
+            return $command->info($this->message("No new tags found to deploy. Current tag is [$currentTag]."));
+        }
+
+        $command->info($this->message('Taking application down...'));
 
         if (! $this->takeApplicationDown()) {
             return $command->error(
@@ -81,21 +85,76 @@ class Deployment
             );
         }
 
-        $command->info(
-            $this->message(sprintf('Updating tag from [%s] to [%s]', $currentTag, $latestTag))
-        );
+        $command->info($this->message("Updating from [$currentTag] to [$nextTag]"));
 
-        if (! $this->git->pull($latestTag)) {
+        if (! $this->git->pull($nextTag)) {
+            $command->error($this->message('Unable to pull next tag. Bringing application back up...'));
+
             $this->bringApplicationUp();
 
-            return $command->error($this->message("Unable to deploy latest tag [$latestTag]"));
+            return $command->error($this->message("Unable to deploy latest tag [$nextTag]."));
         }
+
+        $command->info($this->message("Successfully updated to tag [$nextTag]. Running composer install..."));
 
         $this->composer->install();
 
         $this->bringApplicationUp();
 
-        return $command->info($this->message("Successfully deployed tag [$latestTag]"));
+        return $command->info($this->message("Successfully deployed tag [$nextTag]."));
+    }
+
+    /**
+     * Rollback to the previous tag.
+     *
+     * @param Command     $command
+     * @param string|null $tag
+     *
+     * @return void
+     */
+    public function rollback(Command $command, $tag = null)
+    {
+        if (! $this->git->fetch()) {
+            return $command->error($this->message('Unable to fetch git tags.'));
+        }
+
+        if (empty($currentTag = $this->git->getCurrentTag())) {
+            return $command->error($this->message('Unable to retrieve current git tag'));
+        }
+
+        if (empty($previousTag = $tag ?? $this->git->getPreviousTag($currentTag))) {
+            return $command->error($this->message('Unable to retrieve previous git tag.'));
+        }
+
+        if (! (new Tag($currentTag))->isNewerThan($previousTag)) {
+            return $command->info($this->message("No previous tags found to deploy. Current tag is [$currentTag]."));
+        }
+
+        $command->info($this->message('Taking application down...'));
+
+        if (! $this->takeApplicationDown()) {
+            return $command->error(
+                $this->message('There was an error attempting to bring the application down.')
+            );
+        }
+
+        $command->info($this->message("Rolling back from [$currentTag] to [$previousTag]"));
+
+        if (! $this->git->pull($previousTag)) {
+            $command->error($this->message('Unable to pull next tag. Bringing application back up...'));
+
+            $this->bringApplicationUp();
+
+            return $command->error($this->message("Unable to deploy latest tag [$previousTag]."));
+        }
+
+        $command->info($this->message("Successfully rolled back to tag [$previousTag]. Running composer install..."));
+
+        $this->composer->install();
+
+        $this->bringApplicationUp();
+
+        return $command->info($this->message("Successfully rolled back to tag [$previousTag]."));
     }
 
     /**
