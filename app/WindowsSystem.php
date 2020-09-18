@@ -2,10 +2,23 @@
 
 namespace App;
 
+use Exception;
 use TitasGailius\Terminal\Terminal;
 
 class WindowsSystem extends System
 {
+    /**
+     * Constructor.
+     *
+     * @throws Exception
+     */
+    public function __construct()
+    {
+        if (strpos(strtolower(PHP_OS), 'win') === false) {
+            throw new Exception('System is not Windows.');
+        }
+    }
+
     /**
      * Import the scheduled task.
      *
