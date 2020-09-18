@@ -92,6 +92,52 @@ class Git
     }
 
     /**
+     * Get the next tag according to the current.
+     *
+     * @param string|null $currentTag
+     *
+     * @return string|false
+     */
+    public function getNextTag($currentTag = null)
+    {
+        return $this->fetchTagByOperator(
+            $currentTag ?? $this->getCurrentTag(), $this->getAllTags(), $operand = 'next'
+        );
+    }
+
+    /**
+     * Get the previous tag according to the current.
+     *
+     * @param string|null $currentTag
+     *
+     * @return string|false
+     */
+    public function getPreviousTag($currentTag)
+    {
+        return $this->fetchTagByOperator(
+            $currentTag ?? $this->getCurrentTag(), $this->getAllTags(), $operator = 'previous'
+        );
+    }
+
+    /**
+     * Fetches the previous or next tag in line.
+     *
+     * @param string $currentTag
+     * @param array  $tags
+     * @param string $operator
+     *
+     * @return string|false
+     */
+    protected function fetchTagByOperator($currentTag, $tags = [], $operator = 'next')
+    {
+        if (($key = array_search($currentTag, $tags)) !== false) {
+            return $tags[$operator == 'next' ? ++$key : --$key] ?? false;
+        }
+
+        return false;
+    }
+
+    /**
      * Get the current repository tag.
      *
      * @return string|false

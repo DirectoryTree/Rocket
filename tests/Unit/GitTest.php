@@ -134,4 +134,22 @@ class GitTest extends TestCase
 
         (new Git)->convertRemoteToToken('stevebauman', '', 'origin');
     }
+
+    public function test_get_next_tag()
+    {
+        Terminal::fake([
+            'git tag' => Terminal::response("v1.0.0\nv1.0.1\nv1.0.2")->output()
+        ]);
+
+        $this->assertEquals('v1.0.2', (new Git)->getNextTag('v1.0.1'));
+    }
+
+    public function test_get_previous_tag()
+    {
+        Terminal::fake([
+            'git tag' => Terminal::response("v1.0.0\nv1.0.1\nv1.0.2")->output()
+        ]);
+
+        $this->assertEquals('v1.0.1', (new Git)->getPreviousTag('v1.0.2'));
+    }
 }
