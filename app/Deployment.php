@@ -7,6 +7,8 @@ use TitasGailius\Terminal\Terminal;
 
 class Deployment
 {
+    use BuildsAppConsoleMessage;
+
     /**
      * The Composer instance.
      *
@@ -45,7 +47,7 @@ class Deployment
     {
         $this->composer = $composer;
         $this->application = $application;
-        $this->applicationName = basename($application['path']);
+        $this->applicationName = $application['name'];
         $this->git = new Git($application['git']['remote'] ?? 'origin');
     }
 
@@ -59,41 +61,41 @@ class Deployment
     public function run(Deploy $command)
     {
         if (! $this->git->fetch()) {
-            return $command->error($this->makeMessage('Unable to fetch git tags.'));
+            return $command->error($this->message('Unable to fetch git tags.'));
         }
 
         switch (true) {
             case empty($currentTag = $this->git->getCurrentTag()):
-                return $command->error($this->makeMessage('Unable to retrieve current git tag'));
+                return $command->error($this->message('Unable to retrieve current git tag'));
             case empty($latestTag = $this->git->getLatestTag()):
-                return $command->error($this->makeMessage('Unable to retrieve latest git tag.'));
+                return $command->error($this->message('Unable to retrieve latest git tag.'));
         }
 
         if (! (new Tag($currentTag))->isOlderThan($latestTag)) {
-            return $command->info($this->makeMessage("No new tags found to deploy. Current tag is [$currentTag]"));
+            return $command->info($this->message("No new tags found to deploy. Current tag is [$currentTag]"));
         }
 
         if (! $this->takeApplicationDown()) {
             return $command->error(
-                $this->makeMessage('There was an error attempting to bring the application down.')
+                $this->message('There was an error attempting to bring the application down.')
             );
         }
 
         $command->info(
-            $this->makeMessage(sprintf('Updating tag from [%s] to [%s]', $currentTag, $latestTag))
+            $this->message(sprintf('Updating tag from [%s] to [%s]', $currentTag, $latestTag))
         );
 
         if (! $this->git->pull($latestTag)) {
             $this->bringApplicationUp();
 
-            return $command->error($this->makeMessage("Unable to deploy latest tag [$latestTag]"));
+            return $command->error($this->message("Unable to deploy latest tag [$latestTag]"));
         }
 
         $this->composer->install();
 
         $this->bringApplicationUp();
 
-        return $command->info($this->makeMessage("Successfully deployed tag [$latestTag]"));
+        return $command->info($this->message("Successfully deployed tag [$latestTag]"));
     }
 
     /**
@@ -103,9 +105,9 @@ class Deployment
      *
      * @return string
      */
-    protected function makeMessage($message)
+    protected function message($message)
     {
-        return "[{$this->applicationName}] $message";
+        return $this->makeConsoleMessage($this->applicationName, $message);
     }
 
     /**

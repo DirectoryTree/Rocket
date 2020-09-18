@@ -78,7 +78,7 @@ class Configuration
         $this->write(tap($this->read(), function (&$config) use ($path, $git, $prepend) {
             $method = $prepend ? 'prepend' : 'push';
 
-            $data = ['path' => $path, 'git' => $git];
+            $data = ['name' => basename($path), 'path' => $path, 'git' => $git];
 
             $config['applications'] = collect($config['applications'])->{$method}($data)->unique()->all();
         }));

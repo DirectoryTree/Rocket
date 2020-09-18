@@ -2,13 +2,14 @@
 
 namespace Tests\Feature;
 
-use App\Configuration;
 use Tests\TestCase;
+use App\Configuration;
+use App\BuildsAppConsoleMessage;
 use TitasGailius\Terminal\Terminal;
 
 class DeploymentTest extends TestCase
 {
-    use EnsuresConfigExists;
+    use EnsuresConfigExists, BuildsAppConsoleMessage;
 
     protected function setUp(): void
     {
@@ -17,21 +18,32 @@ class DeploymentTest extends TestCase
         $this->ensureConfigFileExists();
     }
 
-    public function test_fails_when_there_are_no_registered_applications()
+    public function test_deployment_fails_when_there_are_no_registered_applications()
     {
         $this->artisan('deploy')
             ->expectsOutput('There are no registered applications to deploy.');
     }
 
-    public function test_fails_when_tags_cannot_be_fetched()
+    public function test_deployment_fails_when_tags_cannot_be_fetched()
     {
         $this->artisan('register');
 
         Terminal::fake(['git fetch --tags -f' => Terminal::response()->shouldFail()]);
 
-        $path = app(Configuration::class)->read()['applications'][0]['path'];
+        $application = app(Configuration::class)->getApplications()[0]['name'];
 
         $this->artisan('deploy')
-            ->expectsOutput(sprintf('[%s] Unable to fetch git tags.', basename($path)));
+            ->expectsOutput($this->makeConsoleMessage($application, 'Unable to fetch git tags.'));
+    }
+
+    public function test_deployment_fails_when_current_tag_cannot_be_fetched()
+    {
+        $this->markTestSkipped('Incomplete test.');
+
+        $this->artisan('register');
+
+        Terminal::fake([
+            'git fetch --tags -f' => Terminal::response()->successful(),
+        ]);
     }
 }
