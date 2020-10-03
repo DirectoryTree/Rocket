@@ -42,13 +42,14 @@ class Deployment
      *
      * @param Composer $composer
      * @param array    $application
+     * @param Git|null $git
      */
-    public function __construct(Composer $composer, array $application)
+    public function __construct(Composer $composer, array $application, Git $git = null)
     {
         $this->composer = $composer;
         $this->application = $application;
         $this->applicationName = $application['name'];
-        $this->git = new Git($application['git']['remote'] ?? 'origin');
+        $this->git = $git ?? new Git($application['git']['remote'] ?? 'origin');
     }
 
     /**
@@ -66,7 +67,7 @@ class Deployment
         }
 
         if (empty($currentTag = $this->git->getCurrentTag())) {
-            return $command->error($this->message('Unable to retrieve current git tag'));
+            return $command->error($this->message('Unable to retrieve current git tag.'));
         }
 
         if (empty($nextTag = $tag ?? $this->git->getNextTag($currentTag))) {

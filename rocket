@@ -3,7 +3,13 @@
 
 define('LARAVEL_START', microtime(true));
 
-define('ROCKET_HOME_PATH', posix_getpwuid(fileowner(__FILE__))['dir'].'/.config/rocket');
+if (function_exists('posix_getpwuid')) {
+    // macOS / Linux
+    define('ROCKET_HOME_PATH', posix_getpwuid(fileowner(__FILE__))['dir'].'/.config/rocket');
+} else {
+    // Windows
+    define('ROCKET_HOME_PATH', getenv('APPDATA').'/Rocket');
+}
 
 /*
 |--------------------------------------------------------------------------
