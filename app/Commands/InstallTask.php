@@ -2,7 +2,6 @@
 
 namespace App\Commands;
 
-use App\System;
 use App\WindowsSystem;
 use App\Windows\DeploymentTask;
 use Illuminate\Support\Str;
@@ -26,34 +25,17 @@ class InstallTask extends Command
     protected $description = 'Install the Windows automated deployment scheduled task.';
 
     /**
-     * The system instance.
-     *
-     * @var System
-     */
-    protected $system;
-
-    /**
-     * Constructor.
+     * Execute the console command.
      *
      * @param WindowsSystem $system
-     */
-    public function __construct(WindowsSystem $system)
-    {
-        parent::__construct();
-
-        $this->system = $system;
-    }
-
-    /**
-     * Execute the console command.
      *
      * @return int
      */
-    public function handle()
+    public function handle(WindowsSystem $system)
     {
         $user = ! empty($this->option('as-system'))
             ? DeploymentTask::USER_SYSTEM
-            : $this->system->getCurrentUser();
+            : $system->getCurrentUser();
 
         if (! $user) {
             return $this->error('Unable to retrieve user to register scheduled task.');
@@ -72,7 +54,7 @@ class InstallTask extends Command
 
         File::put($taskPath, $task->toXml());
 
-        $imported = $this->system->importScheduledTask($task->name, $taskPath);
+        $imported = $system->importScheduledTask($task->name, $taskPath);
 
         File::delete($taskPath);
 
